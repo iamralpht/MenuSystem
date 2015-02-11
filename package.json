@@ -1,0 +1,28 @@
+{
+  "name": "MenuSystem",
+  "version": "0.1.0",
+  "description": "A menu system",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iamralpht/menusystem.git"
+  },
+  "keywords": [
+    "javascript"
+  ],
+  "author": "Ralph Thomas <ralpht@gmail.com> (https://github.com/iamralpht)",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/iamralpht/menusystem/issues"
+  },
+  "homepage": "https://github.com/iamralpht/menusystem",
+  "scripts": {
+    "build": "webpack src/index.js dist/menusystem.js",
+    "build-min": "COMPRESS=1 webpack src/index.js dist/menusystem.min.js"
+  },
+  "devDependencies": {
+    "webpack": "^1.5.1",
+    "jsx-loader": "0.12.2",
+    "css-loader": "0.9.1"
+  }
+}
