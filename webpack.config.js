@@ -1,4 +1,5 @@
 var webpack = require('webpack');
+var path = require('path');
 
 var plugins = [
   new webpack.optimize.OccurenceOrderPlugin()
@@ -19,6 +20,10 @@ module.exports = {
     libraryTarget: 'umd',
     library: 'Slalom'
   },*/
+  resolve: {
+    root: path.resolve(__dirname, './src'),
+    extensions: ['', '.js']
+  },
   plugins: plugins,
   module: {
     loaders: [

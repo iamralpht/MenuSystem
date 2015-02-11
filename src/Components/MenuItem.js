@@ -8,3 +8,5 @@ var MenuItem = React.createClass({
         </div>);
     }
 });
+
+module.exports = MenuItem;

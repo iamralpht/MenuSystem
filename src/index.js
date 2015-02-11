@@ -1,5 +1,7 @@
+var MenuItem = require('Components/MenuItem');
+
 function onload() {
-    React.renderComponent(<p>Hello</p>, document.body);
+    React.renderComponent(<MenuItem label="Hello"/>, document.body);
 }
 
 window.addEventListener('load', onload, false);

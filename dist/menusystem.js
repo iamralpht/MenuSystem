@@ -44,11 +44,31 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var MenuItem = __webpack_require__(1);
+
 	function onload() {
-	    React.renderComponent(React.createElement("p", null, "Hello"), document.body);
+	    React.renderComponent(React.createElement(MenuItem, {label: "Hello"}), document.body);
 	}
 
 	window.addEventListener('load', onload, false);
+
+
+/***/ },
+/* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// A single MenuItem. It has an icon and a label, and may have children.
+
+	var MenuItem = React.createClass({displayName: "MenuItem",
+	    render: function() {
+	        return (
+	        React.createElement("div", {className: "MenuItem"}, 
+	            React.createElement("div", {className: "Label"}, this.props.label)
+	        ));
+	    }
+	});
+
+	module.exports = MenuItem;
 
 
 /***/ }
