@@ -44,10 +44,11 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var Phone = __webpack_require__(2);
 	var MenuItem = __webpack_require__(1);
 
 	function onload() {
-	    React.renderComponent(React.createElement(MenuItem, {label: "Hello"}), document.body);
+	    React.renderComponent(React.createElement(Phone, null, React.createElement(MenuItem, {label: "Hello"})), document.body);
 	}
 
 	window.addEventListener('load', onload, false);
@@ -69,6 +70,30 @@
 	});
 
 	module.exports = MenuItem;
+
+
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// A box that's the shape of a phone display.
+
+	// Use inline styles.
+	var phoneStyle = {
+	    'position': 'relative',
+	    'margin': 'auto',
+	    'width': '320px',
+	    'height': '480px',
+	    'background-color': 'black',
+	};
+
+	var Phone = React.createClass({displayName: "Phone",
+	    render: function() {
+	        return React.createElement("div", {style: phoneStyle}, this.props.children);
+	    }
+	});
+
+	module.exports = Phone;
 
 
 /***/ }
