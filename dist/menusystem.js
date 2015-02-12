@@ -44,19 +44,32 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Phone = __webpack_require__(3);
+	var Phone = __webpack_require__(4);
 	var MenuItem = __webpack_require__(1);
 	var MenuRow = __webpack_require__(2);
+	var Menu = __webpack_require__(3);
+
+	var menuDescription = {
+	    children: [
+	        { label: "Hello" },
+	        { label: "Exposure" },
+	        { label: "Contrast", open: true, children: [ { label: "More Contrast" } ] },
+	        { label: "Saturation" }
+	    ]
+	};
 
 	function onload() {
+	/*
+	            <MenuRow>
+	                <MenuItem label="Hello"/>
+	                <MenuItem label="Exposure"/>
+	                <MenuItem label="Contrast"/>
+	                <MenuItem label="Saturation"/>
+	            </MenuRow>
+	            */
 	    React.renderComponent(
 	        React.createElement(Phone, null, 
-	            React.createElement(MenuRow, null, 
-	                React.createElement(MenuItem, {label: "Hello"}), 
-	                React.createElement(MenuItem, {label: "Exposure"}), 
-	                React.createElement(MenuItem, {label: "Contrast"}), 
-	                React.createElement(MenuItem, {label: "Saturation"})
-	            )
+	            React.createElement(Menu, {menu: menuDescription})
 	        ),
 	        document.body);
 	}
@@ -134,6 +147,46 @@
 
 /***/ },
 /* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// Menu controller
+
+	var MenuItem = __webpack_require__(1);
+	var MenuRow = __webpack_require__(2);
+
+	// This object takes a description of a recursive menu and builds it using MenuRows and MenuItems.
+	// It handles when MenuItems are activated and either opens the submenu, backs up to the parent
+	// menu or calls a function to the outside world.
+
+	function makeChildrenRecursive(description, outChildren) {
+	    var openChild = null;
+	    var items = [];
+	    for (var i = 0; i < description.children.length; i++) {
+	        var child = description.children[i];
+
+	        items.push(React.createElement(MenuItem, {label: child.label}));
+	        if (child.open) openChild = child;
+	    }
+	    outChildren.push(React.createElement(MenuRow, null, items));
+	    if (openChild) makeChildrenRecursive(openChild, outChildren);
+	}
+
+	var Menu = React.createClass({displayName: "Menu",
+	    render: function() {
+	        var children = [];
+	        var root = this.props.menu;
+
+	        makeChildrenRecursive(root, children);
+
+	        return React.createElement("div", {className: "menu"}, children);
+	    }
+	});
+
+	module.exports = Menu;
+
+
+/***/ },
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// A box that's the shape of a phone display.
