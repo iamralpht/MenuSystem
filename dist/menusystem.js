@@ -107,7 +107,7 @@
 	var MenuItem = React.createClass({displayName: "MenuItem",
 	    render: function() {
 	        return (
-	        React.createElement("div", {style: MenuItemStyle, className: "MenuItem"}, 
+	        React.createElement("div", React.__spread({},  this.props, {style: MenuItemStyle, className: "MenuItem"}), 
 	            React.createElement("div", {style: LabelStyle, className: "Label"}, this.props.label)
 	        ));
 	    }
@@ -171,12 +171,17 @@
 	    },
 	    render: function() {
 	        var menuStack = this.state.stack;
+	        var self = this;
 
 	        function openMenuItem(menuItem) {
+	            console.log('open menu item ', menuItem);
 	            menuStack.addRow(menuItem);
+	            self.setState({ layout: menuStack.layout() });
 	        }
 	        function closeLastRow() {
+	            console.log('close last row...');
 	            menuStack.closeLastRow();
+	            self.setState({ layout: menuStack.layout() });
 	        }
 
 	        // Compute the positions for the child rows.
@@ -185,7 +190,17 @@
 
 	        for (var i = 0; i < menuItems.length; i++) {
 	            var item = menuItems[i];
-	            children.push(React.createElement(MenuRow, {style: {transform: item.transform, opacity: item.opacity}}, React.createElement(MenuItem, {label: "Hello"})));
+	            // Clicking on anything but the last MenuRow should pop the current one off.
+	            var onTap = (i == menuItems.length - 1) ? openMenuItem : closeLastRow;
+	            var items = [];
+	            if (item.description.children) {
+	                for (var j = 0; j < item.description.children.length; j++) {
+	                    var child = item.description.children[j];
+	                    items.push(React.createElement(MenuItem, {label: child.label, onClick: onTap.bind(null, child)}));
+	                }
+	            }
+
+	            children.push(React.createElement(MenuRow, {style: {transform: item.transform, opacity: item.opacity}}, items));
 	        }
 
 	        return React.createElement("div", {className: "menu"}, children);
@@ -253,36 +268,59 @@
 	    properties.description = this._description;
 	    return properties;
 	}
+	MenuRow.prototype.animationDone = function() { return this._openSpring.done() && this._collapseSpring.done(); }
+	MenuRow.prototype.hasAnimatedAway = function() { return this._openSpring.done() && Math.round(this._openSpring.x() * 100) == 0; }
 
 	// This models the physics/layout for the whole menu.
 	function MenuStack() {
 	    this._rows = [];
+	    this._animationDone = false;
 	}
 	MenuStack.prototype.addRow = function(description) {
+	    this._animationDone = false;
+
 	    for (var i = 0; i < this._rows.length; i++) {
-	        this._rows.setCollapsed(true);
+	        this._rows[i].setCollapsed(true);
 	    }
 	    var newRow = new MenuRow(description);
 	    newRow.setOpen(true);
 	    this._rows.push(newRow);
 	}
 	MenuStack.prototype.closeLastRow = function() {
-	    if (this._rows.length == 0) return;
+	    if (this._rows.length <= 1) return;
+
+	    this._animationDone = false;
 	    this._rows[this._rows.length - 1].setOpen(false);
 	    if (this._rows.length >= 2)
 	        this._rows[this._rows.length - 2].setCollapsed(false);
 	}
 	MenuStack.prototype.layout = function() {
+	    this._animationDone = true;
 	    var positions = [];
 	    var yoffset = 0;
+
+	    var remainingRows = [];
+
+
 	    for (var i = 0; i < this._rows.length; i++) {
+	        // Are we still animating? Check every row.
+	        this._animationDone &= this._rows[i].animationDone();
+
+	        // Maybe this row has animated away, in which case don't
+	        // remember it for next time.
+	        if (!this._rows[i].hasAnimatedAway())
+	            remainingRows.push(this._rows[i]);
+
 	        var pos = this._rows[i].computeBounds(yoffset);
 	        yoffset = pos.yoffset;
 	        positions.push(pos);
 	    }
+	    
+	    this._rows = remainingRows;
+
 	    return positions;
 	}
-	MenuStack.prototype.done = function() { return false; }
+	MenuStack.prototype.done = function() { return false; }//this._animationDone; }
 
 	module.exports = MenuStack;
 

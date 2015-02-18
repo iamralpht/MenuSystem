@@ -31,7 +31,7 @@ var LabelStyle = {
 var MenuItem = React.createClass({
     render: function() {
         return (
-        <div style={MenuItemStyle} className="MenuItem">
+        <div {...this.props} style={MenuItemStyle} className="MenuItem">
             <div style={LabelStyle} className="Label">{this.props.label}</div>
         </div>);
     }

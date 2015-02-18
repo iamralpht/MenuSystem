@@ -28,35 +28,58 @@ MenuRow.prototype.computeBounds = function(yoffset) {
     properties.description = this._description;
     return properties;
 }
+MenuRow.prototype.animationDone = function() { return this._openSpring.done() && this._collapseSpring.done(); }
+MenuRow.prototype.hasAnimatedAway = function() { return this._openSpring.done() && Math.round(this._openSpring.x() * 100) == 0; }
 
 // This models the physics/layout for the whole menu.
 function MenuStack() {
     this._rows = [];
+    this._animationDone = false;
 }
 MenuStack.prototype.addRow = function(description) {
+    this._animationDone = false;
+
     for (var i = 0; i < this._rows.length; i++) {
-        this._rows.setCollapsed(true);
+        this._rows[i].setCollapsed(true);
     }
     var newRow = new MenuRow(description);
     newRow.setOpen(true);
     this._rows.push(newRow);
 }
 MenuStack.prototype.closeLastRow = function() {
-    if (this._rows.length == 0) return;
+    if (this._rows.length <= 1) return;
+
+    this._animationDone = false;
     this._rows[this._rows.length - 1].setOpen(false);
     if (this._rows.length >= 2)
         this._rows[this._rows.length - 2].setCollapsed(false);
 }
 MenuStack.prototype.layout = function() {
+    this._animationDone = true;
     var positions = [];
     var yoffset = 0;
+
+    var remainingRows = [];
+
+
     for (var i = 0; i < this._rows.length; i++) {
+        // Are we still animating? Check every row.
+        this._animationDone &= this._rows[i].animationDone();
+
+        // Maybe this row has animated away, in which case don't
+        // remember it for next time.
+        if (!this._rows[i].hasAnimatedAway())
+            remainingRows.push(this._rows[i]);
+
         var pos = this._rows[i].computeBounds(yoffset);
         yoffset = pos.yoffset;
         positions.push(pos);
     }
+    
+    this._rows = remainingRows;
+
     return positions;
 }
-MenuStack.prototype.done = function() { return false; }
+MenuStack.prototype.done = function() { return false; }//this._animationDone; }
 
 module.exports = MenuStack;
