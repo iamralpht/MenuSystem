@@ -49,24 +49,17 @@
 	var MenuRow = __webpack_require__(2);
 	var Menu = __webpack_require__(3);
 
+
 	var menuDescription = {
 	    children: [
 	        { label: "Hello" },
 	        { label: "Exposure" },
-	        { label: "Contrast", open: true, children: [ { label: "More Contrast" } ] },
+	        { label: "Contrast", children: [ { label: "More Contrast" } ] },
 	        { label: "Saturation" }
 	    ]
 	};
 
 	function onload() {
-	/*
-	            <MenuRow>
-	                <MenuItem label="Hello"/>
-	                <MenuItem label="Exposure"/>
-	                <MenuItem label="Contrast"/>
-	                <MenuItem label="Saturation"/>
-	            </MenuRow>
-	            */
 	    React.renderComponent(
 	        React.createElement(Phone, null, 
 	            React.createElement(Menu, {menu: menuDescription})
@@ -138,7 +131,18 @@
 
 	var MenuItemRow = React.createClass({displayName: "MenuItemRow",
 	    render: function() {
-	        return React.createElement("div", {style: MenuItemRowStyle, className: "MenuItemRow"}, this.props.children);
+	        var style = {};
+	        for (var k in MenuItemRowStyle) {
+	            if (MenuItemRowStyle.hasOwnProperty(k))
+	                style[k] = MenuItemRowStyle[k];
+	        }
+	        if (this.props.style) {
+	            for (var k in this.props.style) {
+	                if (this.props.style.hasOwnProperty(k))
+	                    style[k] = this.props.style[k];
+	            }
+	        }
+	        return React.createElement("div", {style: style, className: "MenuItemRow"}, this.props.children);
 	    }
 	});
 
@@ -153,30 +157,36 @@
 
 	var MenuItem = __webpack_require__(1);
 	var MenuRow = __webpack_require__(2);
-
-	// This object takes a description of a recursive menu and builds it using MenuRows and MenuItems.
-	// It handles when MenuItems are activated and either opens the submenu, backs up to the parent
-	// menu or calls a function to the outside world.
-
-	function makeChildrenRecursive(description, outChildren) {
-	    var openChild = null;
-	    var items = [];
-	    for (var i = 0; i < description.children.length; i++) {
-	        var child = description.children[i];
-
-	        items.push(React.createElement(MenuItem, {label: child.label}));
-	        if (child.open) openChild = child;
-	    }
-	    outChildren.push(React.createElement(MenuRow, null, items));
-	    if (openChild) makeChildrenRecursive(openChild, outChildren);
-	}
+	var MenuStack = __webpack_require__(5);
 
 	var Menu = React.createClass({displayName: "Menu",
-	    render: function() {
-	        var children = [];
-	        var root = this.props.menu;
+	    getInitialState: function() {
+	        var menuStack = new MenuStack();
+	        menuStack.addRow(this.props.menu);
 
-	        makeChildrenRecursive(root, children);
+	        var self = this;
+	        Gravitas.createAnimation(menuStack, function() { self.setState({ layout: menuStack.layout() }); });
+
+	        return { stack: menuStack, layout: menuStack.layout() };
+	    },
+	    render: function() {
+	        var menuStack = this.state.stack;
+
+	        function openMenuItem(menuItem) {
+	            menuStack.addRow(menuItem);
+	        }
+	        function closeLastRow() {
+	            menuStack.closeLastRow();
+	        }
+
+	        // Compute the positions for the child rows.
+	        var menuItems = this.state.layout;
+	        var children = [];
+
+	        for (var i = 0; i < menuItems.length; i++) {
+	            var item = menuItems[i];
+	            children.push(React.createElement(MenuRow, {style: {transform: item.transform, opacity: item.opacity}}, React.createElement(MenuItem, {label: "Hello"})));
+	        }
 
 	        return React.createElement("div", {className: "menu"}, children);
 	    }
@@ -207,6 +217,74 @@
 	});
 
 	module.exports = Phone;
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// Model for a MenuItem, contains menu information as well as transform information.
+
+	var COLLAPSE_SPRING_COLLAPSED_POSITION = 0.2;
+	var MENU_ROW_HEIGHT = 80;
+	var COLLAPSED_MENU_ROW_HEIGHT = MENU_ROW_HEIGHT * COLLAPSE_SPRING_COLLAPSED_POSITION;
+
+	function MenuRow(description) {
+	    this._description = description;
+	    this._xoffset = 0;      // Horizontal scroll amount.
+
+	    // More interesting modeling stuff.
+	    this._openSpring = new Gravitas.Spring(1, 200, 20); // Bounce open when tapped.
+	    this._collapseSpring = new Gravitas.Spring(1, 200, 20); // Shrink downward when shrunken.
+
+	    this._openSpring.snap(0);
+	    this._collapseSpring.snap(1);
+	}
+	MenuRow.prototype.setOpen = function(isOpen) { this._openSpring.setEnd(isOpen ? 1 : 0); }
+	MenuRow.prototype.setCollapsed = function(isCollapsed) { this._collapseSpring.setEnd(isCollapsed ? COLLAPSE_SPRING_COLLAPSED_POSITION : 1); }
+	MenuRow.prototype.moving = function() { return !this._openSpring.done() || !this._collapseSpring.done(); }
+	// Compute the y position and scale of this MenuRow.
+	MenuRow.prototype.computeBounds = function(yoffset) {
+	    var properties = {};
+	    var scale = this._openSpring.x() * this._collapseSpring.x();
+	    properties.opacity = scale;
+	    properties.transform = 'translateY(' + (yoffset - MENU_ROW_HEIGHT * scale) + 'px) scale(' + scale + ') translateX(' + this._xoffset + 'px)';
+	    properties.yoffset = yoffset - MENU_ROW_HEIGHT * scale;
+	    properties.description = this._description;
+	    return properties;
+	}
+
+	// This models the physics/layout for the whole menu.
+	function MenuStack() {
+	    this._rows = [];
+	}
+	MenuStack.prototype.addRow = function(description) {
+	    for (var i = 0; i < this._rows.length; i++) {
+	        this._rows.setCollapsed(true);
+	    }
+	    var newRow = new MenuRow(description);
+	    newRow.setOpen(true);
+	    this._rows.push(newRow);
+	}
+	MenuStack.prototype.closeLastRow = function() {
+	    if (this._rows.length == 0) return;
+	    this._rows[this._rows.length - 1].setOpen(false);
+	    if (this._rows.length >= 2)
+	        this._rows[this._rows.length - 2].setCollapsed(false);
+	}
+	MenuStack.prototype.layout = function() {
+	    var positions = [];
+	    var yoffset = 0;
+	    for (var i = 0; i < this._rows.length; i++) {
+	        var pos = this._rows[i].computeBounds(yoffset);
+	        yoffset = pos.yoffset;
+	        positions.push(pos);
+	    }
+	    return positions;
+	}
+	MenuStack.prototype.done = function() { return false; }
+
+	module.exports = MenuStack;
 
 
 /***/ }

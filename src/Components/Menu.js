@@ -2,30 +2,36 @@
 
 var MenuItem = require('Components/MenuItem');
 var MenuRow = require('Components/MenuRow');
-
-// This object takes a description of a recursive menu and builds it using MenuRows and MenuItems.
-// It handles when MenuItems are activated and either opens the submenu, backs up to the parent
-// menu or calls a function to the outside world.
-
-function makeChildrenRecursive(description, outChildren) {
-    var openChild = null;
-    var items = [];
-    for (var i = 0; i < description.children.length; i++) {
-        var child = description.children[i];
-
-        items.push(<MenuItem label={child.label}></MenuItem>);
-        if (child.open) openChild = child;
-    }
-    outChildren.push(<MenuRow>{items}</MenuRow>);
-    if (openChild) makeChildrenRecursive(openChild, outChildren);
-}
+var MenuStack = require('Model/MenuStack');
 
 var Menu = React.createClass({
-    render: function() {
-        var children = [];
-        var root = this.props.menu;
+    getInitialState: function() {
+        var menuStack = new MenuStack();
+        menuStack.addRow(this.props.menu);
 
-        makeChildrenRecursive(root, children);
+        var self = this;
+        Gravitas.createAnimation(menuStack, function() { self.setState({ layout: menuStack.layout() }); });
+
+        return { stack: menuStack, layout: menuStack.layout() };
+    },
+    render: function() {
+        var menuStack = this.state.stack;
+
+        function openMenuItem(menuItem) {
+            menuStack.addRow(menuItem);
+        }
+        function closeLastRow() {
+            menuStack.closeLastRow();
+        }
+
+        // Compute the positions for the child rows.
+        var menuItems = this.state.layout;
+        var children = [];
+
+        for (var i = 0; i < menuItems.length; i++) {
+            var item = menuItems[i];
+            children.push(<MenuRow style={{transform: item.transform, opacity: item.opacity}}><MenuItem label="Hello"/></MenuRow>);
+        }
 
         return <div className="menu">{children}</div>;
     }
