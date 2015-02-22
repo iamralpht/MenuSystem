@@ -19,12 +19,10 @@ var Menu = React.createClass({
         var self = this;
 
         function openMenuItem(menuItem) {
-            console.log('open menu item ', menuItem);
             menuStack.addRow(menuItem);
             self.setState({ layout: menuStack.layout() });
         }
         function closeLastRow() {
-            console.log('close last row...');
             menuStack.closeLastRow();
             self.setState({ layout: menuStack.layout() });
         }
@@ -44,8 +42,10 @@ var Menu = React.createClass({
                     items.push(<MenuItem label={child.label} onClick={onTap.bind(null, child)}/>);
                 }
             }
+            // Clicking anywhere closes the last row, unless this is the last row.
+            var onTapParent = (i == menuItems.length - 1) ? null : closeLastRow;
 
-            children.push(<MenuRow style={{transform: item.transform, opacity: item.opacity}}>{items}</MenuRow>);
+            children.push(<MenuRow style={{transform: item.transform, opacity: item.opacity}} onClick={onTapParent}>{items}</MenuRow>);
         }
 
         return <div className="menu">{children}</div>;

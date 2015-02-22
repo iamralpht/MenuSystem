@@ -1,6 +1,6 @@
 // Model for a MenuItem, contains menu information as well as transform information.
 
-var COLLAPSE_SPRING_COLLAPSED_POSITION = 0.2;
+var COLLAPSE_SPRING_COLLAPSED_POSITION = 0.4;
 var MENU_ROW_HEIGHT = 80;
 var COLLAPSED_MENU_ROW_HEIGHT = MENU_ROW_HEIGHT * COLLAPSE_SPRING_COLLAPSED_POSITION;
 
@@ -57,10 +57,15 @@ MenuStack.prototype.closeLastRow = function() {
 MenuStack.prototype.layout = function() {
     this._animationDone = true;
     var positions = [];
-    var yoffset = 0;
+    var yoffset = MENU_ROW_HEIGHT * (1 - COLLAPSE_SPRING_COLLAPSED_POSITION);
 
     var remainingRows = [];
 
+    // Walk the array backwards and tweak the y-offset so that the menu rows
+    // move downwards as a new one opens on top.
+    for (var i = this._rows.length - 1; i > 0; i--) {
+        yoffset += this._rows[i]._openSpring.x() * MENU_ROW_HEIGHT * COLLAPSE_SPRING_COLLAPSED_POSITION;
+    }
 
     for (var i = 0; i < this._rows.length; i++) {
         // Are we still animating? Check every row.

@@ -4,7 +4,9 @@ var MenuItemRowStyle = {
     'position': 'absolute',
     'width': '100%',
     'height': '80px',
-    'bottom': '0px'
+    'bottom': '0px',
+    '-webkit-transform-origin': '50% 0',
+    'transform-origin': '50% 0'
 };
 
 var MenuItemRow = React.createClass({
@@ -20,7 +22,7 @@ var MenuItemRow = React.createClass({
                     style[k] = this.props.style[k];
             }
         }
-        return <div style={style} className="MenuItemRow">{this.props.children}</div>;
+        return <div {...this.props} style={style} className="MenuItemRow">{this.props.children}</div>;
     }
 });
 
